@@ -126,9 +126,6 @@ function addToInventory() {
   });
 }
 
-// INSERT INTO products (product_name, department_name, price, stock_quantity)
-// VALUES
-// ("Salmon", "Meat", 10, 200),
 function addNewProduct() {
   inquirer.prompt([
   {

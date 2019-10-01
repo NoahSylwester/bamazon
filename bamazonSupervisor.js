@@ -29,7 +29,63 @@ function viewProductSalesByDepartment() {
 };
 
 function createNewDepartment() {
-
+  inquirer.prompt([
+    {
+      name: "name",
+      type: "input",
+      message: "Enter department name.",
+      validate: function(input) {
+        if (input.length < 1) {
+          return "You must enter a name";
+        }
+        else {
+          return true;
+        }
+      }
+    },
+    {
+      name: "costs",
+      type: "input",
+      message: "Enter overhead costs.",
+      validate: function(input) {
+        if (input.search(/\D/) !== -1) {
+          return "You must enter a valid number";
+        }
+        else {
+          return true;
+        }
+      }
+    },
+    {
+      name: "sales",
+      type: "input",
+      message: "Enter any existing product sales.",
+      validate: function(input) {
+        if (input === "") {
+          return true;
+        }
+        else if (input.search(/\D/) !== -1) {
+          return "You must enter a valid number";
+        }
+        else {
+          return true;
+        }
+      }
+    }
+  ]).then(function(response) {
+    if (response.sales === "") {
+      response.sales = 0;
+    }
+    connection.query(
+      `INSERT INTO departments (department_name, over_head_costs, product_sales) VALUES ("${response.name}", "${response.costs}", "${response.sales}")`, function (error, results) {
+      // handle errors
+      if (error) throw error;
+  
+      console.log(`\n${response.name.brightCyan} has been added to the departments database.\n`);
+    });
+  }).then(function(){
+    connection.end();
+  })
 }
 
 connection.connect();

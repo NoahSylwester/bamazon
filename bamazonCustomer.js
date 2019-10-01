@@ -69,6 +69,18 @@ inquirer.prompt([{
           console.log(`Thanks for shopping at bamazon! Your total is ${("$" + (chosenProduct.price * parseInt(response.amount, 10))).toString().brightGreen}.`);
         }
       );
+      var assignment = `product_sales = product_sales + ${(chosenProduct.price * parseInt(response.amount, 10))}`;
+      var query = connection.query(
+        `UPDATE departments SET ${assignment} WHERE ?`,
+        [
+          {
+            department_name: chosenProduct.department_name
+          }
+        ],
+        function (err, res) {
+          if (err) throw err;
+        }
+      );
     }
     else {
       console.log('Insufficient quantity in stock.');
