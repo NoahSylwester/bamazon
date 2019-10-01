@@ -66,7 +66,7 @@ inquirer.prompt([{
         function(err, res) {
           if (err) throw err;
           // return total and thanks
-          console.log(`Thanks for shopping at bamazon! Your total is $${chosenProduct.price * parseInt(response.amount, 10)}.`);
+          console.log(`Thanks for shopping at bamazon! Your total is ${("$" + (chosenProduct.price * parseInt(response.amount, 10))).toString().brightGreen}.`);
         }
       );
     }
