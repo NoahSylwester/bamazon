@@ -52,7 +52,6 @@ inquirer.prompt([{
     name: "amount",
     message: "How many units do you wish to buy?"
   }]).then(function(response) {
-    console.log(parseInt(response.amount, 10), chosenProduct.stock_quantity);
     if (parseInt(response.amount, 10) <= chosenProduct.stock_quantity) {
       var query = connection.query(
         "UPDATE products SET ? WHERE ?",
