@@ -10,6 +10,10 @@ var connection = mysql.createConnection({
   database: "bamazon"
 });
 
+// store department names
+var departments = [];
+
+
 function viewProducts() {
   connection.query('SELECT * FROM products', function (error, results) {
     // handle errors
@@ -127,16 +131,41 @@ function addToInventory() {
 }
 
 function addNewProduct() {
+  connection.query('SELECT department_name FROM departments', function (error, results) {
+    // handle errors
+    if (error) throw error;
+  
+    for (let i = 0; i < results.length; i++){
+      departments.push(results[i].department_name);
+    }
+  });
   inquirer.prompt([
   {
     name: "name",
     type: "input",
-    message: "Enter product name."
+    message: "Enter product name.",
+    validate: function(input) {
+      if (input.length < 1) {
+        return "You must enter a name";
+      }
+      else {
+        return true;
+      }
+    }
   },
   {
     name: "dept",
     type: "input",
-    message: "Enter department name."
+    message: "Enter department name.",
+    validate: function(input) {
+      if (departments.includes(input)) {
+        return true;
+      }
+      else {
+        console.log(`\n  ${departments.join('\n  ').brightCyan}`);
+        return "Not a valid department name. Please choose from the list above."
+      }
+    }
   },
   {
     name: "price",
