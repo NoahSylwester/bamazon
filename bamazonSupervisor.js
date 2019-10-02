@@ -11,6 +11,9 @@ var connection = mysql.createConnection({
   database: "bamazon"
 });
 
+// will hold array of existing departments to check new names against
+var departments = [];
+
 function viewProductSalesByDepartment() {
   connection.query('SELECT * FROM departments', function (error, results) {
     // handle errors
@@ -24,11 +27,19 @@ function viewProductSalesByDepartment() {
     }
 
     console.log(table(salesTable));
+    isContinue();
   });
-  connection.end();
 };
 
 function createNewDepartment() {
+  connection.query('SELECT department_name FROM departments', function (error, results) {
+    // handle errors
+    if (error) throw error;
+  
+    for (let i = 0; i < results.length; i++){
+      departments.push(results[i].department_name);
+    }
+  });
   inquirer.prompt([
     {
       name: "name",
@@ -37,6 +48,9 @@ function createNewDepartment() {
       validate: function(input) {
         if (input.length < 1) {
           return "You must enter a name";
+        }
+        else if (departments.includes(input)) {
+          return "Department already exists"
         }
         else {
           return true;
@@ -48,7 +62,7 @@ function createNewDepartment() {
       type: "input",
       message: "Enter overhead costs.",
       validate: function(input) {
-        if (input.search(/\D/) !== -1) {
+        if (input.search(/\D/) !== -1 || input === '') {
           return "You must enter a valid number";
         }
         else {
@@ -59,7 +73,7 @@ function createNewDepartment() {
     {
       name: "sales",
       type: "input",
-      message: "Enter any existing product sales.",
+      message: "Enter any existing product sales (default is 0).",
       validate: function(input) {
         if (input === "") {
           return true;
@@ -82,14 +96,31 @@ function createNewDepartment() {
       if (error) throw error;
   
       console.log(`\n${response.name.brightCyan} has been added to the departments database.\n`);
+
+      isContinue();
     });
-  }).then(function(){
-    connection.end();
   })
+}
+
+function isContinue() {
+  inquirer.prompt([{
+    type: 'confirm',
+    name: 'answer',
+    message: "Would you like to execute another command?"
+  }]).then(function(res) {
+    if (res.answer) {
+      homeInterface();
+    }
+    else {
+      // disconnect
+      connection.end();
+    }
+  });
 }
 
 connection.connect();
 
+function homeInterface() {
 inquirer.prompt([{
   type: "list",
   name: "action",
@@ -108,3 +139,6 @@ inquirer.prompt([{
       break;
   }
 });
+}
+
+homeInterface();

@@ -12,6 +12,23 @@ var connection = mysql.createConnection({
 
 connection.connect();
 
+function isContinue() {
+    inquirer.prompt([{
+      type: 'confirm',
+      name: 'answer',
+      message: "Would you like to continue shopping?"
+    }]).then(function(res) {
+      if (res.answer) {
+        homeInterface();
+      }
+      else {
+        // disconnect
+        connection.end();
+      }
+    });
+  }
+
+function homeInterface() {
 connection.query('SELECT * FROM products', function (error, results) {
   // handle errors
   if (error) throw error;
@@ -22,7 +39,7 @@ connection.query('SELECT * FROM products', function (error, results) {
   // if no error display all available products
   var itemLog = "";
   // build cleaner strings to display products
-  for (let i = 0; i < results.length; i++){
+  for (let i = 0; i < results.length; i++) {
     availableIds.push(results[i].item_id);
     itemLog += `\nID: ${results[i].item_id.toString().green}\nNAME: ${results[i].product_name.brightCyan}\nPRICE: ${results[i].price.toString().yellow}\n`;
   }
@@ -30,64 +47,74 @@ connection.query('SELECT * FROM products', function (error, results) {
   console.log(`\nItems for sale:
 ${itemLog}`);
 
-// prompt user for input
-inquirer.prompt([{
-  type: "input",
-  name: "id",
-  message: "Enter the ID of the product you wish to purchase.",
-  validate: function(input) {
-    if (availableIds.includes(parseInt(input, 10))) {
-      return true;
-    }
-    else {
-      return "Not a valid ID.";
-    }
-  }
-}]).then(function(response) {
-  // save selected product
-  var chosenProduct = results[availableIds.indexOf(parseInt(response.id, 10))];
-  // prompt user for amount of chosen product
+  // prompt user for input
   inquirer.prompt([{
     type: "input",
-    name: "amount",
-    message: "How many units do you wish to buy?"
-  }]).then(function(response) {
-    if (parseInt(response.amount, 10) <= chosenProduct.stock_quantity) {
-      var query = connection.query(
-        "UPDATE products SET ? WHERE ?",
-        [
-          {
-            stock_quantity: chosenProduct.stock_quantity - parseInt(response.amount, 10)
-          },
-          {
-            item_id: chosenProduct.item_id
-          }
-        ],
-        function(err, res) {
-          if (err) throw err;
-          // return total and thanks
-          console.log(`Thanks for shopping at bamazon! Your total is ${("$" + (chosenProduct.price * parseInt(response.amount, 10))).toString().brightGreen}.`);
-        }
-      );
-      var assignment = `product_sales = product_sales + ${(chosenProduct.price * parseInt(response.amount, 10))}`;
-      var query = connection.query(
-        `UPDATE departments SET ${assignment} WHERE ?`,
-        [
-          {
-            department_name: chosenProduct.department_name
-          }
-        ],
-        function (err, res) {
-          if (err) throw err;
-        }
-      );
+    name: "id",
+    message: "Enter the ID of the product you wish to purchase.",
+    validate: function (input) {
+      if (availableIds.includes(parseInt(input, 10))) {
+        return true;
+      }
+      else {
+        return "Not a valid ID.";
+      }
     }
-    else {
-      console.log('Insufficient quantity in stock.');
-    }
-  }).then(function() {
-    // disconnect
-    connection.end();
+  }]).then(function (response) {
+    // save selected product
+    var chosenProduct = results[availableIds.indexOf(parseInt(response.id, 10))];
+    // prompt user for amount of chosen product
+    inquirer.prompt([{
+      type: "input",
+      name: "amount",
+      message: "How many units do you wish to buy?",
+      validate: function(input) {
+        if (input.search(/\D/) !== -1 || input === '') {
+          return "You must enter a valid number";
+        }
+        else {
+          return true;
+        }
+      }
+    }]).then(function (response) {
+      if (parseInt(response.amount, 10) <= chosenProduct.stock_quantity) {
+        var query = connection.query(
+          "UPDATE products SET ? WHERE ?",
+          [
+            {
+              stock_quantity: chosenProduct.stock_quantity - parseInt(response.amount, 10)
+            },
+            {
+              item_id: chosenProduct.item_id
+            }
+          ],
+          function (err, res) {
+            if (err) throw err;
+            // return total and thanks
+            console.log(`Thanks for shopping at bamazon! Your total is ${("$" + (chosenProduct.price * parseInt(response.amount, 10))).toString().brightGreen}.`);
+            isContinue();
+          }
+        );
+        var assignment = `product_sales = product_sales + ${(chosenProduct.price * parseInt(response.amount, 10))}`;
+        var query = connection.query(
+          `UPDATE departments SET ${assignment} WHERE ?`,
+          [
+            {
+              department_name: chosenProduct.department_name
+            }
+          ],
+          function (err, res) {
+            if (err) throw err;
+          }
+        );
+      }
+      else {
+        console.log('Insufficient quantity in stock.');
+        isContinue();
+      }
+    })
   })
-})
 });
+}
+
+homeInterface();

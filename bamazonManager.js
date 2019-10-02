@@ -28,8 +28,8 @@ function viewProducts() {
     // display parsed results
     console.log(`\nItems for sale:
   ${itemLog}`);
+  isContinue();
   });
-  connection.end();
 };
 
 function viewLowInventory() {
@@ -59,9 +59,8 @@ function viewLowInventory() {
       // display parsed results
       console.log(`\nLow inventory (limit ${limit} units):
     ${itemLog}`);
+    isContinue();
     });
-  }).then(function() {
-    connection.end();
   })
 };
 
@@ -104,7 +103,15 @@ function addToInventory() {
       inquirer.prompt([{
         type: "input",
         name: "amount",
-        message: "How many units should be added?"
+        message: "How many units should be added?",
+        validate: function(input) {
+          if (input.search(/\D/) !== -1 || input === '') {
+            return "You must enter a valid number";
+          }
+          else {
+            return true;
+          }
+        }
       }]).then(function (response) {
         var query = connection.query(
           "UPDATE products SET ? WHERE ?",
@@ -120,11 +127,9 @@ function addToInventory() {
             if (err) throw err;
             // return total and thanks
             console.log(`${chosenProduct.product_name} has been updated. The new quantity is ${(chosenProduct.stock_quantity + parseInt(response.amount, 10)).toString().green}.`);
+            isContinue();
           }
         );
-      }).then(function () {
-        // disconnect
-        connection.end();
       })
     })
   });
@@ -172,7 +177,7 @@ function addNewProduct() {
     type: "input",
     message: "Enter price per unit.",
     validate: function(input) {
-      if (input.search(/\D/) !== -1) {
+      if (input.search(/\D/) !== -1 || input === '') {
         return "You must enter a valid number";
       }
       else {
@@ -185,7 +190,7 @@ function addNewProduct() {
     type: "input",
     message: "Enter number of units.",
     validate: function(input) {
-      if (input.search(/\D/) !== -1) {
+      if (input.search(/\D/) !== -1 || input === '') {
         return "You must enter a valid number";
       }
       else {
@@ -200,37 +205,56 @@ function addNewProduct() {
     if (error) throw error;
 
     console.log(`\n${response.name.brightCyan} has been added to the products database.\n`);
+    isContinue();
   });
-}).then(function(){
-  connection.end();
 })
+}
+
+function isContinue() {
+  inquirer.prompt([{
+    type: 'confirm',
+    name: 'answer',
+    message: "Would you like to execute another command?"
+  }]).then(function(res) {
+    if (res.answer) {
+      homeInterface();
+    }
+    else {
+      // disconnect
+      connection.end();
+    }
+  });
 }
 
 connection.connect();
 
-inquirer.prompt([{
-  type: "list",
-  name: "action",
-  message: "Select an action",
-  choices: [
-    "View Products for Sale",
-    "View Low Inventory",
-    "Add to Inventory",
-    "Add New Product"
-  ]
-}]).then(function(response) {
-  switch (response.action) {
-    case "View Products for Sale":
-      viewProducts();
-      break;
-    case "View Low Inventory":
-      viewLowInventory();
-      break;
-    case "Add to Inventory":
-      addToInventory();
-      break;
-    case "Add New Product":
-      addNewProduct();
-      break;
-  }
-});
+function homeInterface() {
+  inquirer.prompt([{
+    type: "list",
+    name: "action",
+    message: "Select an action",
+    choices: [
+      "View Products for Sale",
+      "View Low Inventory",
+      "Add to Inventory",
+      "Add New Product"
+    ]
+  }]).then(function (response) {
+    switch (response.action) {
+      case "View Products for Sale":
+        viewProducts();
+        break;
+      case "View Low Inventory":
+        viewLowInventory();
+        break;
+      case "Add to Inventory":
+        addToInventory();
+        break;
+      case "Add New Product":
+        addNewProduct();
+        break;
+    }
+  });
+}
+
+homeInterface();
